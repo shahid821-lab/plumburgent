@@ -1,0 +1,10 @@
+{
+  "name": "plumburgent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Plumb Urgent — call-only static landing page for paid traffic. Zero runtime dependencies.",
+  "scripts": {
+    "build": "node src/build.mjs"
+  }
+}
