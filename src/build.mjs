@@ -54,7 +54,7 @@ function legalShell(title, bodyHtml, d) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title} · ${d.BRAND_NAME}</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="base.css"><link rel="stylesheet" href="theme.css">
+<style>${d.__CSS || ""}</style>
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(faviconSvg(d))}">
 <style>.legal{max-width:760px;margin:0 auto;padding:clamp(3rem,8vw,6rem) 1.2rem}
 .legal h1{font-size:clamp(2rem,4vw,3rem);margin-bottom:1.4rem}
@@ -108,8 +108,18 @@ if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
 const env = derive(parseEnv(readFileSync(join(SRC, ".env"), "utf8")));
+// Inline CSS + JS into the HTML so styling never depends on how the host
+// serves .css/.js (some static hosts send the wrong MIME type, which with
+// X-Content-Type-Options: nosniff blocks the stylesheet entirely).
+const CSS = readFileSync(join(SRC, "base.css"), "utf8") + "\n" + readFileSync(join(SRC, "theme.css"), "utf8");
+const JS = readFileSync(join(SRC, "app.js"), "utf8");
+env.__CSS = CSS; // used by legalShell to inline the same styles
 const tpl = readFileSync(join(SRC, "content.html"), "utf8");
-writeFileSync(join(OUT, "index.html"), render(tpl, env));
+const indexHtml = render(tpl, env)
+  .replace('<link rel="stylesheet" href="base.css">', () => `<style>${CSS}</style>`)
+  .replace('<link rel="stylesheet" href="theme.css">', () => "")
+  .replace('<script src="app.js" defer></script>', () => `<script>${JS}</script>`);
+writeFileSync(join(OUT, "index.html"), indexHtml);
 copyFileSync(join(SRC, "base.css"), join(OUT, "base.css"));
 copyFileSync(join(SRC, "app.js"), join(OUT, "app.js"));
 copyFileSync(join(SRC, "theme.css"), join(OUT, "theme.css"));
